@@ -72,7 +72,7 @@ public class ControlBox
       final ItemStack stack = new ItemStack(this.asItem());
       if(te instanceof ControlBoxBlockEntity cb) {
         final CompoundTag tedata = cb.writenbt(world.registryAccess(), new CompoundTag());
-        if(tedata.contains("logic") && !tedata.getCompound("logic").getString("code").trim().isEmpty()) {
+        if(tedata.contains("logic") && !Auxiliaries.nbtString(Auxiliaries.nbtCompound(tedata, "logic"), "code").trim().isEmpty()) {
           Auxiliaries.setItemStackNbt(stack, "tedata", tedata);
           Auxiliaries.setItemLabel(stack, cb.getCustomName());
         }
@@ -89,9 +89,9 @@ public class ControlBox
       Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true);
       if(!Auxiliaries.Tooltip.extendedTipCondition()) return;
       final CompoundTag nbt = Auxiliaries.getItemStackNbt(stack, "tedata");
-      final CompoundTag nbt_logic = nbt.getCompound("tedata").getCompound("logic");
+      final CompoundTag nbt_logic = Auxiliaries.nbtCompound(Auxiliaries.nbtCompound(nbt, "tedata"), "logic");
       if(nbt_logic.isEmpty()) return;
-      Arrays.stream(nbt_logic.getString("code").split("\\n"))
+      Arrays.stream(Auxiliaries.nbtString(nbt_logic, "code").split("\\n"))
         .map(s->s.replaceAll("#.*$", "").trim())
         .filter(s->!s.isEmpty())
         .map(s->(Component.literal(s).withStyle(ChatFormatting.DARK_GREEN)))
@@ -148,7 +148,7 @@ public class ControlBox
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
       final BlockPos dp = fromPos.subtract(pos);
-      final Direction world_side = Direction.fromDelta(dp.getX(), dp.getY(), dp.getZ());
+      final Direction world_side = Direction.getNearest(dp, null);
       if(world_side!=null) cb.signal_update(world_side, getReverseStateMappedFacing(state, world_side));
       return state;
     }
@@ -175,15 +175,15 @@ public class ControlBox
     @Override
     public CompoundTag readnbt(HolderLookup.Provider hlp, CompoundTag nbt)
     {
-      if(nbt.contains("name", Tag.TAG_STRING)) custom_name_ = Auxiliaries.unserializeTextComponent(nbt.getString("name"), hlp);
-      final CompoundTag logic_data = nbt.contains("logic", Tag.TAG_COMPOUND) ? nbt.getCompound("logic") : new CompoundTag();
-      logic_.code(logic_data.getString("code"));
-      logic_.input_data = logic_data.getInt("input");
-      logic_.output_data = logic_data.getInt("output");
-      final CompoundTag logic_symbols = logic_data.contains("symbols", Tag.TAG_COMPOUND) ? logic_data.getCompound("symbols") : new CompoundTag();
+      if(Auxiliaries.nbtContains(nbt, "name", Tag.TAG_STRING)) custom_name_ = Auxiliaries.unserializeTextComponent(Auxiliaries.nbtString(nbt, "name"), hlp);
+      final CompoundTag logic_data = Auxiliaries.nbtContains(nbt, "logic", Tag.TAG_COMPOUND) ? Auxiliaries.nbtCompound(nbt, "logic") : new CompoundTag();
+      logic_.code(Auxiliaries.nbtString(logic_data, "code"));
+      logic_.input_data = Auxiliaries.nbtInt(logic_data, "input");
+      logic_.output_data = Auxiliaries.nbtInt(logic_data, "output");
+      final CompoundTag logic_symbols = Auxiliaries.nbtContains(logic_data, "symbols", Tag.TAG_COMPOUND) ? Auxiliaries.nbtCompound(logic_data, "symbols") : new CompoundTag();
       logic_.symbols_.clear();
-      logic_symbols.getAllKeys().forEach(k->logic_.symbols_.put(k, logic_symbols.getInt(k)));
-      activating_player_ = nbt.hasUUID("player") ? nbt.getUUID("player") : null;
+      logic_symbols.keySet().forEach(k->logic_.symbols_.put(k, Auxiliaries.nbtInt(logic_symbols, k)));
+      activating_player_ = Auxiliaries.nbtUUID(nbt, "player");
       return nbt;
     }
 
@@ -199,7 +199,7 @@ public class ControlBox
       for(var e:logic_.symbols_.entrySet()) logic_symbols.putInt(e.getKey(), e.getValue());
       logic_data.put("symbols", logic_symbols);
       nbt.put("logic", logic_data);
-      if(activating_player_ != null) nbt.putUUID("player", activating_player_);
+      Auxiliaries.putUUID(nbt, "player", activating_player_);
       return nbt;
     }
 
@@ -260,7 +260,7 @@ public class ControlBox
                 final BlockPos target_pos = device_pos.relative(world_dir);
                 final BlockState target_state = world.getBlockState(target_pos);
                 if(target_state.hasAnalogOutputSignal()) {
-                  final int cov = target_state.getAnalogOutputSignal(world, target_pos);
+                final int cov = target_state.getAnalogOutputSignal(world, target_pos, world_dir);
                   logic_.symbol(port_name+".co", cov);
                 } else {
                   logic_.symbol(port_name+".co", 0);
@@ -487,7 +487,7 @@ public class ControlBox
     @Override
     public void onServerPacketReceived(int windowId, CompoundTag nbt)
     {
-      switch(nbt.getString("action")) {
+      switch(Auxiliaries.nbtString(nbt, "action")) {
         case "serverdata" -> received_server_data_ = nbt;
       }
     }
@@ -498,13 +498,13 @@ public class ControlBox
       final ControlBoxBlockEntity te = te();
       if(te==null) return;
       int sync = 0;
-      switch(nbt.getString("action")) {
-        case "codeupdate" -> { te.setCode(nbt.getString("code")); }
+      switch(Auxiliaries.nbtString(nbt, "action")) {
+        case "codeupdate" -> { te.setCode(Auxiliaries.nbtString(nbt, "code")); }
         case "serverdata" -> { sync = 2; }
         case "servervalues" -> { sync = 1; }
         case "enabled" -> {
           te.setEnabled(!te.getEnabled());
-          te.setRcaPlayerUUID((te.getEnabled() && nbt.getBoolean("withrca")) ? player.getUUID() : null);
+          te.setRcaPlayerUUID((te.getEnabled() && Auxiliaries.nbtBoolean(nbt, "withrca")) ? player.getUUID() : null);
           sync = 2;
         }
         default -> {
@@ -666,47 +666,47 @@ public class ControlBox
         final CompoundTag nbt = getMenu().fetchReceivedServerData();
         if(!nbt.isEmpty()) {
           if(nbt.contains("ports")) {
-            final int mask = (nbt.getInt("inputs")|nbt.getInt("outputs"));
-            final int io = nbt.getInt("ports");
+            final int mask = (Auxiliaries.nbtInt(nbt, "inputs")|Auxiliaries.nbtInt(nbt, "outputs"));
+            final int io = Auxiliaries.nbtInt(nbt, "ports");
             for(int i=0; i<Defs.PORT_NAMES.size(); ++i) {
               if((mask & (0xf<<(4*i))) == 0) continue;
               port_stati.get(i).setValue(String.format("%1s=%02d", Defs.PORT_NAMES.get(i).toUpperCase(), (io>>(4*i)) & 0xf));
             }
           }
           if(nbt.contains("code")) {
-            textbox.setValue(nbt.getString("code"));
+            textbox.setValue(Auxiliaries.nbtString(nbt, "code"));
             focus_editor_ = true;
           }
           if(nbt.contains("enabled")) {
-            start_stop.checked(nbt.getBoolean("enabled"));
+            start_stop.checked(Auxiliaries.nbtBoolean(nbt, "enabled"));
             focus_editor_ = true;
           }
           if(nbt.contains("debug")) {
-            debug_enabled_ = nbt.getBoolean("debug");
+            debug_enabled_ = Auxiliaries.nbtBoolean(nbt, "debug");
           }
           if(nbt.contains("inputs")) {
-            int mask = nbt.getInt("inputs");
+            int mask = Auxiliaries.nbtInt(nbt, "inputs");
             for(int i=0; i<Defs.PORT_NAMES.size(); ++i) {
               port_stati_i_indicators.get(i).visible = ((mask & 0xf) != 0);
               mask >>=4;
             }
           }
           if(nbt.contains("outputs")) {
-            int mask = nbt.getInt("outputs");
+            int mask = Auxiliaries.nbtInt(nbt, "outputs");
             for(int i=0; i<Defs.PORT_NAMES.size(); ++i) {
               port_stati_o_indicators.get(i).visible = ((mask & 0xf) != 0);
               mask >>=4;
             }
           }
-          if(nbt.contains("symbols", Tag.TAG_COMPOUND)) {
-            CompoundTag sym_nbt = nbt.getCompound("symbols");
+          if(Auxiliaries.nbtContains(nbt, "symbols", Tag.TAG_COMPOUND)) {
+            CompoundTag sym_nbt = Auxiliaries.nbtCompound(nbt, "symbols");
             symbols_.clear();
-            sym_nbt.getAllKeys().forEach(k->symbols_.put(k, sym_nbt.getInt(k)));
+            sym_nbt.keySet().forEach(k->symbols_.put(k, Auxiliaries.nbtInt(sym_nbt, k)));
           }
-          if(nbt.contains("errors", Tag.TAG_COMPOUND)) {
-            CompoundTag err_nbt = nbt.getCompound("errors");
+          if(Auxiliaries.nbtContains(nbt, "errors", Tag.TAG_COMPOUND)) {
+            CompoundTag err_nbt = Auxiliaries.nbtCompound(nbt, "errors");
             errors_.clear();
-            err_nbt.getAllKeys().forEach(k->{ try { errors_.add(new Tuple<>(Integer.parseInt(k), err_nbt.getString(k))); } catch(Throwable ignored) {} });
+            err_nbt.keySet().forEach(k->{ try { errors_.add(new Tuple<>(Integer.parseInt(k), Auxiliaries.nbtString(err_nbt, k))); } catch(Throwable ignored) {} });
             if(errors_.isEmpty()) {
               cb_error_indicator.visible = false;
               cb_error_indicator.setX(0);
@@ -720,8 +720,8 @@ public class ControlBox
               cb_error_indicator.setY(exy.y + textbox.getLineHeight());
             }
           }
-          if(nbt.contains("player", Tag.TAG_STRING)) {
-            final String player_name = nbt.getString("player");
+          if(Auxiliaries.nbtContains(nbt, "player", Tag.TAG_STRING)) {
+            final String player_name = Auxiliaries.nbtString(nbt, "player");
             if(player_name.isEmpty()) {
               activating_player_ = Component.empty();
               rca_enabled_indicator.visible = false;

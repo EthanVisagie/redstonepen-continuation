@@ -17,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -259,10 +260,37 @@ public class Auxiliaries
   // Item NBT data
   // -------------------------------------------------------------------------------------------------------------------
 
+  public static boolean nbtContains(CompoundTag nbt, String key, int tagType)
+  {
+    final Tag tag = nbt.get(key);
+    return (tag != null) && (tag.getId() == tagType);
+  }
+
+  public static String nbtString(CompoundTag nbt, String key)
+  { return nbt.getStringOr(key, ""); }
+
+  public static int nbtInt(CompoundTag nbt, String key)
+  { return nbt.getIntOr(key, 0); }
+
+  public static long nbtLong(CompoundTag nbt, String key)
+  { return nbt.getLongOr(key, 0L); }
+
+  public static boolean nbtBoolean(CompoundTag nbt, String key)
+  { return nbt.getBooleanOr(key, false); }
+
+  public static CompoundTag nbtCompound(CompoundTag nbt, String key)
+  { return nbt.getCompoundOrEmpty(key); }
+
+  public static UUID nbtUUID(CompoundTag nbt, String key)
+  { return nbt.getIntArray(key).filter(a -> a.length == 4).map(UUIDUtil::uuidFromIntArray).orElse(null); }
+
+  public static void putUUID(CompoundTag nbt, String key, UUID value)
+  { if(value != null) nbt.putIntArray(key, UUIDUtil.uuidToIntArray(value)); }
+
   public static boolean hasItemStackNbt(ItemStack stack, String key)
   {
     final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).getUnsafe();
-    return (nbt != null) && (nbt.contains(key, CompoundTag.TAG_COMPOUND));
+    return (nbt != null) && nbtContains(nbt, key, CompoundTag.TAG_COMPOUND);
   }
 
   /**

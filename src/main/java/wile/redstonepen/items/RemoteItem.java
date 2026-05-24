@@ -137,8 +137,8 @@ public class RemoteItem extends StandardItems.BaseItem
   private Optional<RemoteData> getRemoteData(ItemStack stack)
   {
     final CompoundTag nbt = Auxiliaries.getItemStackNbt(stack, "remote");
-    if((nbt == null) || (!nbt.contains("pos", 99)) || (!nbt.contains("name", 8))) return Optional.empty();
-    return Optional.of(new RemoteData(BlockPos.of(nbt.getLong("pos")), nbt.getString("name")));
+    if((nbt == null) || (!nbt.contains("pos")) || (!nbt.contains("name"))) return Optional.empty();
+    return Optional.of(new RemoteData(BlockPos.of(Auxiliaries.nbtLong(nbt, "pos")), Auxiliaries.nbtString(nbt, "name")));
   }
 
   private void setRemoteData(ItemStack stack, BlockPos pos, String name)

@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEventListener;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -80,12 +82,12 @@ public class StandardEntityBlocks
     { return nbt; }
 
     @Override
-    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider hlp)
-    { readnbt(hlp, nbt); }
+    protected void loadAdditional(ValueInput input)
+    { super.loadAdditional(input); }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider hlp)
-    { super.saveAdditional(writenbt(hlp, nbt, false), hlp); }
+    protected void saveAdditional(ValueOutput output)
+    { super.saveAdditional(output); }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider hlp)

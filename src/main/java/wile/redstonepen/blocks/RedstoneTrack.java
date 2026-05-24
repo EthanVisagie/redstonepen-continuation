@@ -658,19 +658,19 @@ public class RedstoneTrack
     @Override
     public CompoundTag readnbt(HolderLookup.Provider hlp, CompoundTag nbt)
     {
-      state_flags_ = nbt.getLong("sflags");
+      state_flags_ = Auxiliaries.nbtLong(nbt, "sflags");
       nets_.clear();
-      if(nbt.contains("nets", Tag.TAG_LIST)) {
-        final ListTag lst = nbt.getList("nets", Tag.TAG_COMPOUND);
+      if(Auxiliaries.nbtContains(nbt, "nets", Tag.TAG_LIST)) {
+        final ListTag lst = nbt.getListOrEmpty("nets");
         try {
           for(int i=0; i<lst.size(); ++i) {
-            CompoundTag route_nbt = lst.getCompound(i);
+            CompoundTag route_nbt = lst.getCompound(i).orElse(new CompoundTag());
             nets_.add(new TrackNet(
-              Arrays.stream(route_nbt.getLongArray("npos")).mapToObj(BlockPos::of).collect(Collectors.toList()),
-              Arrays.stream(route_nbt.getIntArray("nsid")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
-              Arrays.stream(route_nbt.getIntArray("ifac")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
-              Arrays.stream(route_nbt.getIntArray("pfac")).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
-              route_nbt.getInt("power")
+              Arrays.stream(route_nbt.getLongArray("npos").orElse(new long[]{})).mapToObj(BlockPos::of).collect(Collectors.toList()),
+              Arrays.stream(route_nbt.getIntArray("nsid").orElse(new int[]{})).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
+              Arrays.stream(route_nbt.getIntArray("ifac").orElse(new int[]{})).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
+              Arrays.stream(route_nbt.getIntArray("pfac").orElse(new int[]{})).mapToObj(Direction::from3DDataValue).collect(Collectors.toList()),
+              Auxiliaries.nbtInt(route_nbt, "power")
             ));
           }
         } catch(Throwable ex) {

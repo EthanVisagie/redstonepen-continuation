@@ -21,6 +21,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -67,7 +70,7 @@ public class BasicGauge
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving)
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, Orientation orientation, boolean isMoving)
     {
       if(world.isClientSide()) return;
       final int p = world.getBestNeighborSignal(pos);
@@ -76,9 +79,9 @@ public class BasicGauge
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction dir, BlockState fromState, LevelAccessor world_accessor, BlockPos pos, BlockPos fromPos)
+    protected BlockState updateShape(BlockState state, LevelReader world_reader, ScheduledTickAccess tickAccess, BlockPos pos, Direction dir, BlockPos fromPos, BlockState fromState, RandomSource random)
     {
-      if(!(world_accessor instanceof final ServerLevel world)) return state;
+      if(!(world_reader instanceof final ServerLevel world)) return state;
       return state.setValue(POWER, world.getBestNeighborSignal(pos));
     }
 

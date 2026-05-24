@@ -14,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -220,7 +222,7 @@ public class CircuitComponents
     { return shapes_.getOrDefault(state, Shapes.block()); }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
+    protected boolean propagatesSkylightDown(BlockState state)
     { return !state.getValue(WATERLOGGED); }
 
     public boolean canConnectRedstone(BlockState state, BlockGetter world, BlockPos pos, @Nullable Direction side)
@@ -235,7 +237,7 @@ public class CircuitComponents
     { return false; }
 
     @Override
-    public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos)
+    public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction side)
     { return 0; }
 
     @Override
@@ -263,7 +265,7 @@ public class CircuitComponents
         case SOUTH, NORTH -> hit_r.multiply(1, 1, 0);
         default -> hit_r.multiply(1, 0, 1);
       };
-      final Direction dir = Direction.getNearest(hit.x(), hit.y(), hit.z());
+      final Direction dir = Direction.getApproximateNearest(hit.x(), hit.y(), hit.z());
       int rotation = 0;
       switch(face) {
         case DOWN:
@@ -334,22 +336,20 @@ public class CircuitComponents
     { update(state, world, pos, null); }
 
     @Override
-    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving)
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel world, BlockPos pos, boolean isMoving)
     {
-      if(isMoving || state.is(newState.getBlock())) return;
-      super.onRemove(state, world, pos, newState, isMoving);
-      if(!world.isClientSide()) {
-        notifyOutputNeighbourOfStateChange(state, world, pos);
-        world.updateNeighborsAt(pos, this);
-      }
+      if(isMoving) return;
+      super.affectNeighborsAfterRemoval(state, world, pos, isMoving);
+      notifyOutputNeighbourOfStateChange(state, world, pos);
+      world.updateNeighborsAt(pos, this, null);
     }
 
     public boolean shouldCheckWeakPower(BlockState state, SignalGetter level, BlockPos pos, Direction side)
     { return false; }
 
     @Override
-    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, BlockPos fromPos, boolean isMoving)
-    { update(state, world, pos, fromPos); }
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block fromBlock, Orientation orientation, boolean isMoving)
+    { update(state, world, pos, null); }
 
     @Environment(EnvType.CLIENT)
     private void spawnPoweredParticle(Level world, RandomSource rand, BlockPos pos, Vec3 color, Direction side, float chance) {
@@ -358,7 +358,8 @@ public class CircuitComponents
         double p0 = 0.5 + (side.getStepX()*0.4) + (c2*.1);
         double p1 = 0.5 + (side.getStepY()*0.4) + (c2*.1);
         double p2 = 0.5 + (side.getStepZ()*0.4) + (c2*.1);
-        world.addParticle(new DustParticleOptions(new org.joml.Vector3f((float)color.x, (float)color.y, (float)color.z),1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
+        int rgb = (Mth.clamp((int)(color.x * 255), 0, 255) << 16) | (Mth.clamp((int)(color.y * 255), 0, 255) << 8) | Mth.clamp((int)(color.z * 255), 0, 255);
+        world.addParticle(new DustParticleOptions(rgb,1.0F), pos.getX()+p0, pos.getY()+p1, pos.getZ()+p2, 0, 0., 0);
       }
     }
 
@@ -409,9 +410,9 @@ public class CircuitComponents
       final BlockPos adjacent_pos = pos.relative(facing);
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
-        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, pos, false);
+        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, null, false);
         if(RsSignals.canEmitWeakPower(adjacent_state, world, adjacent_pos, facing)) {
-          world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite());
+          world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite(), null);
         }
       } catch(Throwable ex) {
         Auxiliaries.logError("Curcuit neighborChanged recursion detected, dropping!");
@@ -712,7 +713,7 @@ public class CircuitComponents
         if(!world.getBlockTicks().hasScheduledTick(pos, this)) {
           if(powered) {
             world.setBlock(pos, (state=state.setValue(POWERED,true)), 2|16);
-            world.neighborChanged(pos.relative(getOutputFacing(state)), this, pos);
+            world.neighborChanged(pos.relative(getOutputFacing(state)), this, null);
           } else {
             world.scheduleTick(pos, this, 2);
           }
@@ -722,13 +723,13 @@ public class CircuitComponents
       if(fromPos != null) {
         // Wire branch update
         final Vec3i v = pos.subtract(fromPos);
-        final Direction redstone_side = Direction.getNearest(v.getX(), v.getY(), v.getZ());
+        final Direction redstone_side = Direction.getNearest(v, null);
         final Direction left = getLeftFacing(state);
         final Direction right = getRightFacing(state);
         if((redstone_side != left) && (redstone_side != right)) return state;
         power_update_recursion_level_ = 0;
         final BlockPos npos = pos.relative(redstone_side);
-        world.getBlockState(npos).handleNeighborChanged(world, npos, this, pos, false);
+        world.getBlockState(npos).handleNeighborChanged(world, npos, this, null, false);
         final int pr = getInputPower(world, pos, right);
         final int pl = getInputPower(world, pos, left);
         final boolean track_powered = (pr>0) || (pl>0);

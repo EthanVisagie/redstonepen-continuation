@@ -224,16 +224,16 @@ public class StandardBlocks
     { return false; }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
+    protected boolean propagatesSkylightDown(BlockState state)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
         if(state.getValue(WATERLOGGED)) return false;
       }
-      return super.propagatesSkylightDown(state, reader, pos);
+      return super.propagatesSkylightDown(state);
     }
 
     @Override
-    public FluidState getFluidState(BlockState state)
+    protected FluidState getFluidState(BlockState state)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
@@ -242,12 +242,12 @@ public class StandardBlocks
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickAccess, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource random)
     {
       if((config & CFG_WATERLOGGABLE)!=0) {
-        if(state.getValue(WATERLOGGED)) world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
+        if(state.getValue(WATERLOGGED)) tickAccess.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
       }
-      return state;
+      return super.updateShape(state, world, tickAccess, pos, facing, facingPos, facingState, random);
     }
   }
 

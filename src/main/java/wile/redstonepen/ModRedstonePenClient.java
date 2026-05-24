@@ -31,7 +31,7 @@ public class ModRedstonePenClient implements ClientModInitializer
 {
   public ModRedstonePenClient()
   {
-    ModelLoadingPlugin.register(pluginContext->ModRenderers.TrackTer.registerModels());
+    ModelLoadingPlugin.register(ModRenderers.TrackTer::registerModels);
   }
 
   @Override

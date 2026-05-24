@@ -410,7 +410,7 @@ public class CircuitComponents
       final BlockPos adjacent_pos = pos.relative(facing);
       final BlockState adjacent_state = world.getBlockState(adjacent_pos);
       try {
-        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, null, false);
+        adjacent_state.handleNeighborChanged(world, adjacent_pos, this, Auxiliaries.redstoneOrientation(adjacent_pos, pos), false);
         if(RsSignals.canEmitWeakPower(adjacent_state, world, adjacent_pos, facing)) {
           world.updateNeighborsAtExceptFromFacing(adjacent_pos, state.getBlock(), facing.getOpposite(), null);
         }
@@ -712,7 +712,8 @@ public class CircuitComponents
         if(!world.getBlockTicks().hasScheduledTick(pos, this)) {
           if(powered) {
             world.setBlock(pos, (state=state.setValue(POWERED,true)), 2|16);
-            world.neighborChanged(pos.relative(getOutputFacing(state)), this, null);
+            final BlockPos outputPos = pos.relative(getOutputFacing(state));
+            world.neighborChanged(outputPos, this, Auxiliaries.redstoneOrientation(outputPos, pos));
           } else {
             world.scheduleTick(pos, this, 2);
           }
@@ -728,7 +729,7 @@ public class CircuitComponents
         if((redstone_side != left) && (redstone_side != right)) return state;
         power_update_recursion_level_ = 0;
         final BlockPos npos = pos.relative(redstone_side);
-        world.getBlockState(npos).handleNeighborChanged(world, npos, this, null, false);
+        world.getBlockState(npos).handleNeighborChanged(world, npos, this, Auxiliaries.redstoneOrientation(npos, pos), false);
         final int pr = getInputPower(world, pos, right);
         final int pl = getInputPower(world, pos, left);
         final boolean track_powered = (pr>0) || (pl>0);

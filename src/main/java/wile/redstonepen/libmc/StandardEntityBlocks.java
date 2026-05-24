@@ -66,6 +66,8 @@ public class StandardEntityBlocks
 
   public static abstract class StandardBlockEntity extends BlockEntity
   {
+    private static final String PERSISTENCE_KEY = "redstonepen_data";
+
     public StandardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state)
     { super(type, pos, state); }
 
@@ -83,11 +85,18 @@ public class StandardEntityBlocks
 
     @Override
     protected void loadAdditional(ValueInput input)
-    { super.loadAdditional(input); }
+    {
+      super.loadAdditional(input);
+      input.read(PERSISTENCE_KEY, CompoundTag.CODEC).ifPresent((nbt)->readnbt(input.lookup(), nbt));
+    }
 
     @Override
     protected void saveAdditional(ValueOutput output)
-    { super.saveAdditional(output); }
+    {
+      super.saveAdditional(output);
+      final CompoundTag nbt = writenbt(null, new CompoundTag(), false);
+      if(!nbt.isEmpty()) output.store(PERSISTENCE_KEY, CompoundTag.CODEC, nbt);
+    }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider hlp)

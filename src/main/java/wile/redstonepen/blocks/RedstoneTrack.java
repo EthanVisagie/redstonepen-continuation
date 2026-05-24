@@ -498,7 +498,7 @@ public class RedstoneTrack
         if(blocks_to_update.isEmpty()) return;
         for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
           if(update_pos.getKey().equals(update_pos.getValue())) continue;
-          world.neighborChanged(update_pos.getKey(), this, null);
+          world.neighborChanged(update_pos.getKey(), this, Auxiliaries.redstoneOrientation(update_pos.getKey(), update_pos.getValue()));
         }
       } catch(Throwable ex) {
         Auxiliaries.logError("Track neighborChanged recursion detected, dropping!");
@@ -567,7 +567,7 @@ public class RedstoneTrack
         } else {
           final Map<BlockPos,BlockPos> blocks_to_update = te.updateAllPowerValuesFromAdjacent();
           for(Map.Entry<BlockPos,BlockPos> update_pos:blocks_to_update.entrySet()) {
-            world.neighborChanged(update_pos.getKey(), this, null);
+            world.neighborChanged(update_pos.getKey(), this, Auxiliaries.redstoneOrientation(update_pos.getKey(), update_pos.getValue()));
           }
         }
         world.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.4f, 2f);
@@ -602,7 +602,7 @@ public class RedstoneTrack
           if(ppos == pos) continue;
           final BlockState diagonal_state = world.getBlockState(ppos);
           if(diagonal_state.getBlock() != this) continue;
-          world.neighborChanged(ppos, this, null);
+          world.neighborChanged(ppos, this, Auxiliaries.redstoneOrientation(ppos, pos));
         }
       }
     }
@@ -910,14 +910,14 @@ public class RedstoneTrack
           nets_.forEach(net->{ if(net.internal_sides.contains(face)) net.power=0; });
           disconnected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
-            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), null, false);
+            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), Auxiliaries.redstoneOrientation(p, pos), false);
             if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
           });
           connected.forEach((p)->{
             BlockEntity te = getLevel().getBlockEntity(p);
             if(te instanceof TrackBlockEntity) ((TrackBlockEntity)te).updateConnections(1);
-            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), null, false);
-            getBlock().neighborChanged(getBlockState(), getLevel(), getBlockPos(), getBlock(), null, false);
+            getLevel().getBlockState(p).handleNeighborChanged(getLevel(), p, getBlock(), Auxiliaries.redstoneOrientation(p, pos), false);
+            getBlock().neighborChanged(getBlockState(), getLevel(), getBlockPos(), getBlock(), Auxiliaries.redstoneOrientation(getBlockPos(), p), false);
           });
         }
         sync(true);
@@ -999,7 +999,7 @@ public class RedstoneTrack
       if(update_neighbours) {
         final Level world = getLevel();
         final Block block = getBlock();
-        handleNeighborChanged(fromPos).forEach((chpos, frpos)->world.neighborChanged(chpos, block, null));
+        handleNeighborChanged(fromPos).forEach((chpos, frpos)->world.neighborChanged(chpos, block, Auxiliaries.redstoneOrientation(chpos, frpos)));
       }
       return (getWireFlags()!=0);
     }
@@ -1112,7 +1112,7 @@ public class RedstoneTrack
               te.handleNetNeighborChanged(nb_net, my_pos, net, change_notifications);
             }
           } else {
-            world.getBlockState(neighbor.pos).handleNeighborChanged(world, neighbor.pos, getBlock(), null, false);
+            world.getBlockState(neighbor.pos).handleNeighborChanged(world, neighbor.pos, getBlock(), Auxiliaries.redstoneOrientation(neighbor.pos, my_pos), false);
           }
         } else {
           change_notifications.putIfAbsent(neighbor.pos, my_pos);
@@ -1350,7 +1350,7 @@ public class RedstoneTrack
         all_neighbours.forEach((pos)->{
           final BlockState st = world.getBlockState(pos);
           if(trace_) Auxiliaries.logWarn(String.format("UCON: %s UPDATE TRACK CHANGES TO %s.", posstr(getBlockPos()), posstr(pos)));
-          st.handleNeighborChanged(world, pos, state.getBlock(), null, false);
+          st.handleNeighborChanged(world, pos, state.getBlock(), Auxiliaries.redstoneOrientation(pos, getBlockPos()), false);
           world.updateNeighborsAt(pos, st.getBlock(), null);
         });
       }

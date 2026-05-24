@@ -41,6 +41,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
@@ -186,6 +187,7 @@ public class Auxiliaries
   @Environment(EnvType.CLIENT)
   public static List<Component> wrapText(Component text, int max_width_percent)
   {
+    if(!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) return Collections.singletonList(text);
     int max_width = ((Minecraft.getInstance().getWindow().getGuiScaledWidth())-10) * max_width_percent/100;
     return Minecraft.getInstance().font.getSplitter().splitLines(text, max_width, Style.EMPTY).stream()
       .map(ft->Component.literal(ft.getString()))
@@ -243,12 +245,14 @@ public class Auxiliaries
 
   public static @Nullable Component unserializeTextComponent(String serialized, HolderLookup.Provider ra)
   {
-    return ComponentSerialization.CODEC.parse(ra.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), com.google.gson.JsonParser.parseString(serialized)).result().orElse(null);
+    final var ops = (ra == null) ? com.mojang.serialization.JsonOps.INSTANCE : ra.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+    return ComponentSerialization.CODEC.parse(ops, com.google.gson.JsonParser.parseString(serialized)).result().orElse(null);
   }
 
   public static String serializeTextComponent(Component tc, HolderLookup.Provider ra)
   {
-    return (tc==null) ? ("") : ComponentSerialization.CODEC.encodeStart(ra.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), tc).result().map(Object::toString).orElse("");
+    final var ops = (ra == null) ? com.mojang.serialization.JsonOps.INSTANCE : ra.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+    return (tc==null) ? ("") : ComponentSerialization.CODEC.encodeStart(ops, tc).result().map(Object::toString).orElse("");
   }
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -291,6 +295,15 @@ public class Auxiliaries
 
   public static void putUUID(CompoundTag nbt, String key, UUID value)
   { if(value != null) nbt.putIntArray(key, UUIDUtil.uuidToIntArray(value)); }
+
+  public static @Nullable Orientation redstoneOrientation(BlockPos targetPos, @Nullable BlockPos fromPos)
+  {
+    if((targetPos == null) || (fromPos == null) || targetPos.equals(fromPos)) return null;
+    final Direction front = Direction.getNearest(fromPos.subtract(targetPos), null);
+    if(front == null) return null;
+    final Direction up = front.getAxis().isVertical() ? Direction.NORTH : Direction.UP;
+    return Orientation.of(front, up, Orientation.SideBias.LEFT);
+  }
 
   public static boolean hasItemStackNbt(ItemStack stack, String key)
   {

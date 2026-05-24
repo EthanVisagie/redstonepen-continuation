@@ -22,7 +22,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 
@@ -104,7 +103,7 @@ public class TooltipDisplay
         if(tip_component.getString().isEmpty()) return false;
         try {
           final List<Component> lines = Auxiliaries.wrapText(tip_component, 80);
-          gg.renderTooltip(this.font, lines, Optional.empty(), x, y);
+          gg.setTooltipForNextFrame(this.font, lines, java.util.Optional.empty(), x, y);
         } catch(Exception ex) {
           had_render_exception = true;
           Auxiliaries.logError("Tooltip rendering disabled due to exception: '" + ex.getMessage() + "'");

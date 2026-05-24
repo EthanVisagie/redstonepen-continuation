@@ -182,11 +182,11 @@ public class Inventories
     { return inventory_.stillValid(player); }
 
     @Override
-    public void startOpen(Player player)
+    public void startOpen(net.minecraft.world.entity.ContainerUser player)
     { inventory_.startOpen(player); }
 
     @Override
-    public void stopOpen(Player player)
+    public void stopOpen(net.minecraft.world.entity.ContainerUser player)
     { inventory_.stopOpen(player); }
 
     @Override

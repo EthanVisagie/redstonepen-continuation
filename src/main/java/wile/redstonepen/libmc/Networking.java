@@ -38,28 +38,28 @@ public class Networking
     PayloadTypeRegistry.playS2C().register(UnifiedPayload.TYPE, UnifiedPayload.STREAM_CODEC);
     ServerPlayNetworking.registerGlobalReceiver(UnifiedPayload.TYPE, (unifed_payload, context)->{
       final ServerPlayer player = context.player();
-      final ServerLevel world = player.serverLevel();
       if(player==null) return;
+      final ServerLevel world = player.level();
       final CompoundTag payload = unifed_payload.data().nbt();
-      player.server.execute(()->{
+      context.server().execute(()->{
         switch(unifed_payload.data().id()) {
           case PacketTileNotifyClientToServer.PACKET_ID -> {
-            final BlockPos pos = BlockPos.of(payload.getLong("pos"));
-            final CompoundTag nbt = payload.getCompound("nbt");
+            final BlockPos pos = BlockPos.of(Auxiliaries.nbtLong(payload, "pos"));
+            final CompoundTag nbt = Auxiliaries.nbtCompound(payload, "nbt");
             final BlockEntity te = world.getBlockEntity(pos);
             if(!(te instanceof IPacketTileNotifyReceiver)) return;
             ((IPacketTileNotifyReceiver)te).onClientPacketReceived(player, nbt);
           }
           case PacketContainerSyncClientToServer.PACKET_ID -> {
-            final int container_id = payload.getInt("cid");
-            final CompoundTag nbt = payload.getCompound("nbt");
+            final int container_id = Auxiliaries.nbtInt(payload, "cid");
+            final CompoundTag nbt = Auxiliaries.nbtCompound(payload, "nbt");
             if(!(player.containerMenu instanceof INetworkSynchronisableContainer nsc)) return;
             if(player.containerMenu.containerId != container_id) return;
             nsc.onClientPacketReceived(container_id, player, nbt);
           }
           case PacketNbtNotifyClientToServer.PACKET_ID -> {
-            final String hnd = payload.getString("hnd");
-            final CompoundTag nbt = payload.getCompound("nbt");
+            final String hnd = Auxiliaries.nbtString(payload, "hnd");
+            final CompoundTag nbt = Auxiliaries.nbtCompound(payload, "nbt");
             if(hnd.isEmpty() || (!PacketNbtNotifyClientToServer.handlers.containsKey(hnd))) return;
             PacketNbtNotifyClientToServer.handlers.get(hnd).accept(player, nbt);
           }

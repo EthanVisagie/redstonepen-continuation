@@ -31,30 +31,30 @@ public class NetworkingClient
       context.client().execute(()->{
         switch(unifed_payload.data().id()) {
           case Networking.PacketTileNotifyServerToClient.PACKET_ID -> {
-            final BlockPos pos = BlockPos.of(payload.getLong("pos"));
-            final CompoundTag nbt = payload.getCompound("nbt");
+            final BlockPos pos = BlockPos.of(Auxiliaries.nbtLong(payload, "pos"));
+            final CompoundTag nbt = Auxiliaries.nbtCompound(payload, "nbt");
             final BlockEntity te = world.getBlockEntity(pos);
             if(!(te instanceof Networking.IPacketTileNotifyReceiver nte)) return;
             nte.onServerPacketReceived(nbt);
           }
           case Networking.PacketContainerSyncServerToClient.PACKET_ID -> {
-            final int container_id = payload.getInt("cid");
-            final CompoundTag nbt = payload.getCompound("nbt");
+            final int container_id = Auxiliaries.nbtInt(payload, "cid");
+            final CompoundTag nbt = Auxiliaries.nbtCompound(payload, "nbt");
             if(!(player.containerMenu instanceof Networking.INetworkSynchronisableContainer nsc)) return;
             if(player.containerMenu.containerId != container_id) return;
             nsc.onServerPacketReceived(container_id, nbt);
           }
           case Networking.PacketNbtNotifyServerToClient.PACKET_ID -> {
-            final String hnd = payload.getString("hnd");
-            final CompoundTag nbt = payload.getCompound("nbt");
+            final String hnd = Auxiliaries.nbtString(payload, "hnd");
+            final CompoundTag nbt = Auxiliaries.nbtCompound(payload, "nbt");
             if(hnd.isEmpty() || (!Networking.PacketNbtNotifyServerToClient.handlers.containsKey(hnd))) return;
             context.client().execute(()->Networking.PacketNbtNotifyServerToClient.handlers.get(hnd).accept(nbt));
           }
           case Networking.OverlayTextMessage.PACKET_ID -> {
             if(Networking.OverlayTextMessage.handler_ == null) return;
-            final int delay = payload.getInt("delay");
+            final int delay = Auxiliaries.nbtInt(payload, "delay");
             if(delay<=0) return;
-            final String deserialized = payload.getString("msg");
+            final String deserialized = Auxiliaries.nbtString(payload, "msg");
             Component m;
             try {
               m = Auxiliaries.unserializeTextComponent(deserialized, world.registryAccess());

@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 
 public class StandardItems
@@ -56,8 +57,13 @@ public class StandardItems
     public BaseBlockItem(Block block, Item.Properties properties)
     { super(block, properties); }
     @Environment(EnvType.CLIENT)
-    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
-    { Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true); }
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, net.minecraft.world.item.component.TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag)
+    {
+      final List<Component> lines = new java.util.ArrayList<>();
+      Auxiliaries.Tooltip.addInformation(stack, ctx, lines, flag, true);
+      lines.forEach(tooltip);
+    }
 
     public InteractionResult useOn(UseOnContext context)
     {

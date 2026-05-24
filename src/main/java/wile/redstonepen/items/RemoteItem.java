@@ -38,8 +38,10 @@ import wile.redstonepen.libmc.Overlay;
 import wile.redstonepen.libmc.StandardItems;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 
 @SuppressWarnings("deprecation")
@@ -49,19 +51,21 @@ public class RemoteItem extends StandardItems.BaseItem
   { super(properties); }
 
   //------------------------------------------------------------------------------------------------------------------
-    @Environment(EnvType.CLIENT)
-  public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
+  @Environment(EnvType.CLIENT)
+  @Override
+  public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, net.minecraft.world.item.component.TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag)
   {
+    final List<Component> lines = new ArrayList<>();
     final var data = getRemoteData(stack).orElse(null);
     if(data != null) {
-      tooltip.add(Auxiliaries.localizable("item." + ModConstants.MODID + ".remote.tooltip.linkedto", data.pos.getX(), data.pos.getY(), data.pos.getZ(), Component.translatable(data.name)));
+      lines.add(Auxiliaries.localizable("item." + ModConstants.MODID + ".remote.tooltip.linkedto", data.pos.getX(), data.pos.getY(), data.pos.getZ(), Component.translatable(data.name)));
     } else {
-      tooltip.add(Auxiliaries.localizable("item." + ModConstants.MODID + ".remote.tooltip.notlinked"));
+      lines.add(Auxiliaries.localizable("item." + ModConstants.MODID + ".remote.tooltip.notlinked"));
     }
-    Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true);
+    Auxiliaries.Tooltip.addInformation(stack, ctx, lines, flag, true);
+    lines.forEach(tooltip);
   }
 
-  @Override
   public boolean doesSneakBypassUse(ItemStack stack, LevelReader world, BlockPos pos, Player player)
   { return false; }
 
@@ -69,7 +73,6 @@ public class RemoteItem extends StandardItems.BaseItem
   public boolean isBarVisible(ItemStack stack)
   { return false; }
 
-  @Override
   public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
   {
     final ItemStack stack = (player.getMainHandItem().getItem() instanceof RemoteItem) ? player.getMainHandItem() : player.getOffhandItem();
@@ -77,7 +80,6 @@ public class RemoteItem extends StandardItems.BaseItem
     return false;
   }
 
-  @Override
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player)
   { attack(stack, pos, player); return false; }
 
@@ -153,7 +155,7 @@ public class RemoteItem extends StandardItems.BaseItem
   {
     if(!(stack.getItem() instanceof RemoteItem)) return false;
     if(!(player instanceof ServerPlayer splayer)) return false;
-    final BlockState state = splayer.serverLevel().getBlockState(pos);
+    final BlockState state = splayer.level().getBlockState(pos);
     if((state.getBlock() instanceof LeverBlock) || (state.getBlock() instanceof ButtonBlock) || (state.getBlock() instanceof ControlBox.ControlBoxBlock) ) {
       final String name = state.getBlock().getDescriptionId();
       setRemoteData(stack, pos, name);

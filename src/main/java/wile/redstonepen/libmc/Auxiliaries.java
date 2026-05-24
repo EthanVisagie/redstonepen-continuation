@@ -24,6 +24,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -110,16 +111,16 @@ public class Auxiliaries
   @SuppressWarnings("all")
   public static boolean isShiftDown()
   {
-    return (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) ||
-      InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
+    return (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) ||
+      InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
   }
 
   @Environment(EnvType.CLIENT)
   @SuppressWarnings("all")
   public static boolean isCtrlDown()
   {
-    return (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) ||
-      InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL));
+    return (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) ||
+      InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL));
   }
 
   @Environment(EnvType.CLIENT)
@@ -233,7 +234,7 @@ public class Auxiliaries
 
     @Environment(EnvType.CLIENT)
     public static boolean addInformation(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag, boolean addAdvancedTooltipHints)
-    { return addInformation(stack.getDescriptionId(), stack.getDescriptionId(), tooltip, flag, addAdvancedTooltipHints); }
+    { return addInformation(stack.getItem().getDescriptionId(), stack.getItem().getDescriptionId(), tooltip, flag, addAdvancedTooltipHints); }
   }
 
   @SuppressWarnings("unused")
@@ -241,10 +242,14 @@ public class Auxiliaries
   { player.displayClientMessage(Component.translatable(message.trim()), true); }
 
   public static @Nullable Component unserializeTextComponent(String serialized, HolderLookup.Provider ra)
-  { return Component.Serializer.fromJson(serialized, ra); }
+  {
+    return ComponentSerialization.CODEC.parse(ra.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), com.google.gson.JsonParser.parseString(serialized)).result().orElse(null);
+  }
 
   public static String serializeTextComponent(Component tc, HolderLookup.Provider ra)
-  { return (tc==null) ? ("") : (Component.Serializer.toJson(tc, ra)); }
+  {
+    return (tc==null) ? ("") : ComponentSerialization.CODEC.encodeStart(ra.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), tc).result().map(Object::toString).orElse("");
+  }
 
   // -------------------------------------------------------------------------------------------------------------------
   // Tag Handling
@@ -289,7 +294,7 @@ public class Auxiliaries
 
   public static boolean hasItemStackNbt(ItemStack stack, String key)
   {
-    final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).getUnsafe();
+    final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     return (nbt != null) && nbtContains(nbt, key, CompoundTag.TAG_COMPOUND);
   }
 
@@ -299,7 +304,7 @@ public class Auxiliaries
    */
   public static CompoundTag getItemStackNbt(ItemStack stack, String key)
   {
-    final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).getUnsafe();
+    final CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     if(nbt==null) return new CompoundTag();
     final Tag data = nbt.get(key);
     if((data==null) || (data.getId() != CompoundTag.TAG_COMPOUND)) return new CompoundTag();

@@ -218,7 +218,7 @@ public class CircuitComponents
     { return getShape(state, world, pos, context); }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter world, BlockPos pos)
+    protected VoxelShape getOcclusionShape(BlockState state)
     { return shapes_.getOrDefault(state, Shapes.block()); }
 
     @Override
@@ -316,9 +316,9 @@ public class CircuitComponents
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickAccess, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource random)
     {
-      if((state=super.updateShape(state, facing, facingState, world, pos, facingPos)) == null) return state;
+      if((state=super.updateShape(state, world, tickAccess, pos, facing, facingPos, facingState, random)) == null) return state;
       if(!canSurvive(state, world, pos)) return Blocks.AIR.defaultBlockState();
       return (world instanceof ServerLevel sworld) ? update(state, sworld, pos, facingPos) : state;
     }
@@ -436,7 +436,6 @@ public class CircuitComponents
     public DirectedComponentBlockItem(Block block, Item.Properties builder)
     { super(block, builder); }
 
-    @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int itemSlot, boolean isSelected)
     {
       if((!isSelected) || (!world.isClientSide()) || !(entity instanceof Player player)) return;

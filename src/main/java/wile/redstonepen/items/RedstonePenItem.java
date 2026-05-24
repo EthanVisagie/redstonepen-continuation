@@ -13,10 +13,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -36,7 +38,9 @@ import wile.redstonepen.blocks.RedstoneTrack.TrackBlockEntity;
 import wile.redstonepen.libmc.*;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 
@@ -47,22 +51,23 @@ public class RedstonePenItem extends StandardItems.BaseItem
   { super(properties); }
 
   //------------------------------------------------------------------------------------------------------------------
-    @Environment(EnvType.CLIENT)
-  public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
+  @Environment(EnvType.CLIENT)
+  @Override
+  public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, net.minecraft.world.item.component.TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag)
   {
+    final List<Component> lines = new ArrayList<>();
     if(stack.getMaxDamage()>0) {
-      tooltip.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.numstored", stack.getMaxDamage()-stack.getDamageValue()));
+      lines.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.numstored", stack.getMaxDamage()-stack.getDamageValue()));
     } else {
-      tooltip.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.rsfrominventory"));
+      lines.add(Auxiliaries.localizable("item."+ ModConstants.MODID + ".pen.tooltip.rsfrominventory"));
     }
-    Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true);
+    Auxiliaries.Tooltip.addInformation(stack, ctx, lines, flag, true);
+    lines.forEach(tooltip);
   }
 
-  @Override
   public int getEnchantmentValue()
   { return 0; }
 
-  @Override
   public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair)
   { return false; }
 
@@ -78,7 +83,6 @@ public class RedstonePenItem extends StandardItems.BaseItem
   public int getBarColor(ItemStack stack)
   { return 0x663333; }
 
-  @Override
   public boolean doesSneakBypassUse(ItemStack stack, LevelReader world, BlockPos pos, Player player)
   { return true; }
 
@@ -86,7 +90,6 @@ public class RedstonePenItem extends StandardItems.BaseItem
   public float getDestroySpeed(ItemStack stack, BlockState state)
   { return (state.getBlock().defaultDestroyTime() < 0.5f) ? 10000f : 0f; }
 
-  @Override
   public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player)
   {
     // Hand needs to be guessed here.
@@ -97,7 +100,6 @@ public class RedstonePenItem extends StandardItems.BaseItem
     return false;
   }
 
-  @Override
   public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player)
   { attack(stack, pos, player); return false; }
 
@@ -148,8 +150,9 @@ public class RedstonePenItem extends StandardItems.BaseItem
   }
 
   @Override
-  public void inventoryTick(ItemStack stack, Level world, Entity entity, int itemSlot, boolean isSelected)
+  public void inventoryTick(ItemStack stack, ServerLevel world, Entity entity, EquipmentSlot slot)
   {
+    final boolean isSelected = (entity instanceof Player player) && ((player.getMainHandItem() == stack) || (player.getOffhandItem() == stack));
     if((!isSelected) || (!entity.isShiftKeyDown()) || (world.isClientSide()) || ((world.getGameTime() & 0x1) != 0) || (!(entity instanceof ServerPlayer))) return;
     final HitResult rt = entity.pick(10.0, 0f, false);
     if(rt.getType() != HitResult.Type.BLOCK) return;
@@ -223,14 +226,14 @@ public class RedstonePenItem extends StandardItems.BaseItem
 
   private boolean attack(ItemStack stack, BlockPos pos, Player player)
   {
-    final Level world = player.getCommandSenderWorld();
+    final Level world = player.level();
     final BlockState state = world.getBlockState(pos);
     if(state.is(ModContent.references.TRACK_BLOCK)) {
       final HitResult rt = player.pick(10.0, 0f, false);
       if(rt.getType() != HitResult.Type.BLOCK) return false;
       final InteractionHand hand = (player.getItemInHand(InteractionHand.MAIN_HAND).getItem()==this) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
       if(!(state.getBlock() instanceof RedstoneTrack.RedstoneTrackBlock track)) return false;
-      track.modifySegments(state, player.getCommandSenderWorld(), pos, player, stack, hand, ((BlockHitResult)rt), true, false);
+      track.modifySegments(state, player.level(), pos, player, stack, hand, ((BlockHitResult)rt), true, false);
       return true;
     } else if(state.is(Blocks.REDSTONE_WIRE)) {
       pushRedstone(stack, 1, player);

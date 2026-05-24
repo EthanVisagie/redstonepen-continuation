@@ -17,13 +17,19 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplay;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ExtendedShapelessRecipe implements CraftingRecipe
@@ -50,10 +56,9 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   }
 
   @Override
-  public RecipeSerializer<?> getSerializer()
+  public RecipeSerializer<? extends CraftingRecipe> getSerializer()
   { return ExtendedShapelessRecipe.SERIALIZER; }
 
-  @Override
   public String getGroup()
   { return this.group; }
 
@@ -66,17 +71,14 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
 
   @Override
   public boolean isSpecial()
-  { return isRepair() || aspects.getBoolean("dynamic"); }
+  { return isRepair() || Auxiliaries.nbtBoolean(aspects, "dynamic"); }
 
-  @Override
   public ItemStack getResultItem(HolderLookup.Provider ra)
   { return isSpecial() ? ItemStack.EMPTY : this.result; }
 
-  @Override
   public NonNullList<Ingredient> getIngredients()
   { return this.ingredients; }
 
-  @Override
   public boolean canCraftInDimensions(int i, int j)
   { return i * j >= this.ingredients.size(); }
 
@@ -96,7 +98,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
       }
       return remaining;
     } else {
-      final String tool_name = aspects.getString("tool");
+      final String tool_name = Auxiliaries.nbtString(aspects, "tool");
       final int tool_damage = getToolDamage();
       NonNullList<ItemStack> remaining = NonNullList.withSize(inv.size(), ItemStack.EMPTY);
       for(int i=0; i<remaining.size(); ++i) {
@@ -111,8 +113,12 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
               remaining.set(i, rstack);
             }
           }
-        } else if(stack.getItem().hasCraftingRemainingItem()) {
-          remaining.set(i, new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()));
+        } else {
+          final ItemStack remainder = stack.getItem().getCraftingRemainder();
+          if(!remainder.isEmpty()) {
+            remainder.setCount(stack.getCount());
+            remaining.set(i, remainder);
+          }
         }
       }
       return remaining;
@@ -122,15 +128,20 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
   @Override
   public boolean matches(CraftingInput input, Level world)
   {
-    final StackedContents stacked = new StackedContents();
-    int i = 0;
+    final List<Ingredient> unmatched = new ArrayList<>(this.ingredients);
     for(int j=0; j<input.size(); ++j) {
       final ItemStack ingr = input.getItem(j);
       if(ingr.isEmpty()) continue;
-      stacked.accountStack(ingr, 1);
-      ++i;
+      boolean matched = false;
+      for(int i=0; i<unmatched.size(); ++i) {
+        if(!unmatched.get(i).test(ingr)) continue;
+        unmatched.remove(i);
+        matched = true;
+        break;
+      }
+      if(!matched) return false;
     }
-    return (i==this.ingredients.size()) && stacked.canCraft(this, null);
+    return unmatched.isEmpty();
   }
 
   @Override
@@ -142,23 +153,38 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
       // Initial item crafting
       ItemStack rstack = result.copy();
       if(rstack.isEmpty()) return ItemStack.EMPTY;
-      if(aspects.getInt("initial_durability") > 0) {
-        int dmg = Math.max(0, rstack.getMaxDamage() - aspects.getInt("initial_durability"));
+      if(Auxiliaries.nbtInt(aspects, "initial_durability") > 0) {
+        int dmg = Math.max(0, rstack.getMaxDamage() - Auxiliaries.nbtInt(aspects, "initial_durability"));
         if(dmg > 0) rstack.setDamageValue(dmg);
-      } else if(aspects.getInt("initial_damage") > 0) {
-        int dmg = Math.min(aspects.getInt("initial_damage"), rstack.getMaxDamage());
+      } else if(Auxiliaries.nbtInt(aspects, "initial_damage") > 0) {
+        int dmg = Math.min(Auxiliaries.nbtInt(aspects, "initial_damage"), rstack.getMaxDamage());
         if(dmg > 0) rstack.setDamageValue(dmg);
       }
       return rstack;
     }
   }
 
+  @Override
+  public PlacementInfo placementInfo()
+  { return PlacementInfo.create(this.ingredients); }
+
+  @Override
+  public List<RecipeDisplay> display()
+  {
+    final List<SlotDisplay> ingredientDisplays = this.ingredients.stream().map(Ingredient::display).toList();
+    return List.of(new ShapelessCraftingRecipeDisplay(
+      ingredientDisplays,
+      new SlotDisplay.ItemStackSlotDisplay(this.result),
+      new SlotDisplay.ItemSlotDisplay(Items.CRAFTING_TABLE)
+    ));
+  }
+
   //--------------------------------------------------------------------------------------------------------------------
 
   private int getToolDamage()
   {
-    if(aspects.contains("tool_repair")) return (-Mth.clamp(aspects.getInt("tool_repair"), 0, 4096));
-    if(aspects.contains("tool_damage")) return (Mth.clamp(aspects.getInt("tool_damage"), 1, 1024));
+    if(aspects.contains("tool_repair")) return (-Mth.clamp(Auxiliaries.nbtInt(aspects, "tool_repair"), 0, 4096));
+    if(aspects.contains("tool_damage")) return (Mth.clamp(Auxiliaries.nbtInt(aspects, "tool_damage"), 1, 1024));
     return 0;
   }
 
@@ -167,7 +193,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
 
   private Tuple<ItemStack, NonNullList<ItemStack>> getRepaired(CraftingInput inv)
   {
-    final String tool_name = aspects.getString("tool");
+    final String tool_name = Auxiliaries.nbtString(aspects, "tool");
     final Map<Item, Integer> repair_items = new HashMap<>();
     final NonNullList<ItemStack> remaining = NonNullList.withSize(inv.size(), ItemStack.EMPTY);
     ItemStack tool_item = ItemStack.EMPTY;
@@ -189,10 +215,10 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
       return new Tuple<>(ItemStack.EMPTY, remaining);
     } else {
       final int dmg = tool_item.getDamageValue();
-      if((dmg <= 0) && (!aspects.getBoolean("over_repair"))) return new Tuple<>(ItemStack.EMPTY, remaining);
+      if((dmg <= 0) && (!Auxiliaries.nbtBoolean(aspects, "over_repair"))) return new Tuple<>(ItemStack.EMPTY, remaining);
       final int min_repair_item_count = repair_items.values().stream().mapToInt(Integer::intValue).min().orElse(0);
       if(min_repair_item_count <= 0) return new Tuple<>(ItemStack.EMPTY, remaining);
-      final int single_repair_dur = aspects.getBoolean("relative_repair_damage")
+      final int single_repair_dur = Auxiliaries.nbtBoolean(aspects, "relative_repair_damage")
         ? Math.max(1, -getToolDamage() * tool_item.getMaxDamage() / 100)
         : Math.max(1, -getToolDamage());
       int num_repairs = dmg/single_repair_dur;
@@ -204,7 +230,13 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
         ItemStack stack = inv.getItem(i);
         if(stack.isEmpty()) continue;
         if(Auxiliaries.getResourceLocation(stack.getItem()).toString().equals(tool_name)) continue;
-        remaining.set(i, stack.getItem().hasCraftingRemainingItem() ? new ItemStack(stack.getItem().getCraftingRemainingItem(), stack.getCount()) : stack.copy());
+        final ItemStack remainder = stack.getItem().getCraftingRemainder();
+        if(!remainder.isEmpty()) {
+          remainder.setCount(stack.getCount());
+          remaining.set(i, remainder);
+        } else {
+          remaining.set(i, stack.copy());
+        }
       }
       for(int i=0; i<remaining.size(); ++i) {
         final ItemStack stack = remaining.get(i);
@@ -243,7 +275,7 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
     }
 
     @SuppressWarnings("unchecked")
-    private static final MapCodec<ExtendedShapelessRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
+    private static final MapCodec<ExtendedShapelessRecipe> CODEC = RecordCodecBuilder.<ExtendedShapelessRecipe>mapCodec(instance ->
         instance.group(Codec.STRING.optionalFieldOf("group", "")
                 .forGetter(r->r.group),
         CraftingBookCategory.CODEC
@@ -253,12 +285,14 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
         ItemStack.CODEC
                 .fieldOf("result")
                 .forGetter(r->r.result),
-        Ingredient.CODEC_NONEMPTY
+        Ingredient.CODEC
                 .listOf().fieldOf("ingredients").flatXmap(list -> {
                     final Ingredient[] ingredients = list.stream().filter(ing->!ing.isEmpty()).toArray(Ingredient[]::new);
                     if(ingredients.length == 0) { return DataResult.error(() -> "no ingredients"); }
                     if(ingredients.length > 9) { return DataResult.error(() -> "too many ingredients"); }
-                    return DataResult.success(NonNullList.of(Ingredient.EMPTY, ingredients));
+                    final NonNullList<Ingredient> nnl = NonNullList.create();
+                    Collections.addAll(nnl, ingredients);
+                    return DataResult.success(nnl);
                   }, DataResult::success)
                 .forGetter(r->r.ingredients),
         CompoundTag.CODEC
@@ -278,8 +312,8 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
       final String group = buf.readUtf();
       final CraftingBookCategory cat = buf.readEnum(CraftingBookCategory.class);
       final int size = buf.readVarInt();
-      final NonNullList<Ingredient> ingredients = NonNullList.withSize(size, Ingredient.EMPTY);
-      ingredients.replaceAll(ingr->Ingredient.CONTENTS_STREAM_CODEC.decode(buf));
+      final NonNullList<Ingredient> ingredients = NonNullList.create();
+      for(int i=0; i<size; ++i) ingredients.add(Ingredient.CONTENTS_STREAM_CODEC.decode(buf));
       final ItemStack stack = ItemStack.STREAM_CODEC.decode(buf);
       final CompoundTag aspects = buf.readNbt();
       return new ExtendedShapelessRecipe(group, cat, stack, ingredients, aspects);

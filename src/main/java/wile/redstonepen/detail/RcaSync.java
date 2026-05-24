@@ -74,7 +74,7 @@ public class RcaSync
         if((!nbt.contains("i")) || (num_exceptions >= ERROR_CUTOFF_COUNT)) return;
         try {
           final RcaData rca = ofPlayer(player.getUUID(), true);
-          rca.client_inputs(nbt.getLong("i"));
+          rca.client_inputs(Auxiliaries.nbtLong(nbt, "i"));
           nbt.remove("i");
           nbt.putLong("o", rca.server_outputs());
           Networking.PacketNbtNotifyServerToClient.sendToPlayer(player, "rcadata", nbt);
@@ -95,7 +95,7 @@ public class RcaSync
         return false;
       }
       Networking.PacketNbtNotifyServerToClient.handlers.put(MESSAGE_HANDLER_ID, (nbt)->{
-        if(nbt.contains("o")) rca.setOutputs(nbt.getLong("o"));
+        if(nbt.contains("o")) rca.setOutputs(Auxiliaries.nbtLong(nbt, "o"));
       });
       Auxiliaries.logInfo("Redstone Pen RCA detected and enabled on this client machine.");
       return true;

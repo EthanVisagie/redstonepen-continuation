@@ -35,14 +35,14 @@ public class ModContent
     Registries.addBlock("track",
       ()->new RedstoneTrack.RedstoneTrackBlock(
         StandardBlocks.CFG_DEFAULT,
-        BlockBehaviour.Properties.of().noCollission().instabreak().dynamicShape().randomTicks()
+        BlockBehaviour.Properties.of().noCollision().instabreak().dynamicShape().randomTicks()
       ),
       RedstoneTrack.TrackBlockEntity::new
     );
     Registries.addBlock("control_box",
       ()->new ControlBox.ControlBoxBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollision().instabreak(),
         new AABB[]{
           Auxiliaries.getPixeledAABB(0,0,0, 16,2,16),
           Auxiliaries.getPixeledAABB(3,1,3, 13,3.9,13)
@@ -55,7 +55,7 @@ public class ModContent
     Registries.addBlock("relay",
       ()->new CircuitComponents.RelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollision().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -63,7 +63,7 @@ public class ModContent
     Registries.addBlock("inverted_relay",
       ()->new CircuitComponents.InvertedRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollision().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -71,7 +71,7 @@ public class ModContent
     Registries.addBlock("pulse_relay",
       ()->new CircuitComponents.PulseRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollision().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -79,7 +79,7 @@ public class ModContent
     Registries.addBlock("bistable_relay",
       ()->new CircuitComponents.BistableRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollision().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -87,7 +87,7 @@ public class ModContent
     Registries.addBlock("bridge_relay",
       ()->new CircuitComponents.BridgeRelayBlock(
         StandardBlocks.CFG_CUTOUT,
-        BlockBehaviour.Properties.of().noCollission().instabreak(),
+        BlockBehaviour.Properties.of().noCollision().instabreak(),
         Auxiliaries.getPixeledAABB(5,0,0, 11,1,16)
       ),
       CircuitComponents.DirectedComponentBlockItem::new
@@ -95,25 +95,25 @@ public class ModContent
     Registries.addBlock("basic_gauge",
       ()->new BasicGauge.BasicGaugeBlock(
         StandardBlocks.CFG_TRANSLUCENT,
-        BlockBehaviour.Properties.of().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.COPPER).noCollission().lightLevel((s)->3)
+        BlockBehaviour.Properties.of().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.COPPER).noCollision().lightLevel((s)->3)
       )
     );
     Registries.addBlock("basic_lever",
       ()->new BasicLever.BasicLeverBlock(
         new BasicLever.BasicLeverBlock.Config(0.8f, 0.9f),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        BlockBehaviour.Properties.of().noCollision().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
     Registries.addBlock("basic_button",
       ()->new BasicButton.BasicButtonBlock(
         new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 20),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        BlockBehaviour.Properties.of().noCollision().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
     Registries.addBlock("basic_pulse_button",
       ()->new BasicButton.BasicButtonBlock(
         new BasicButton.BasicButtonBlock.Config(0.8f, 0.9f, 2),
-        BlockBehaviour.Properties.of().noCollission().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
+        BlockBehaviour.Properties.of().noCollision().isValidSpawn(Blocks::never).strength(0.3f).sound(SoundType.METAL).pushReaction(PushReaction.DESTROY)
       )
     );
   }

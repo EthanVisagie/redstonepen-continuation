@@ -10,8 +10,6 @@ package wile.redstonepen.libmc;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.EnvType;
@@ -24,12 +22,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.font.TextFieldHelper;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
 import net.minecraft.util.StringUtil;
+import org.joml.Matrix3x2fStack;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -69,7 +70,7 @@ public class GuiTextEditing
       super(x, y, width, height, title);
       edit_ = new TextFieldHelper(
         this::getText, this::setText, this::getClipboard, this::setClipboard,
-        (s)->s.length()<max_text_size_ && font_.wordWrapHeight(s, width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
+        (s)->s.length()<max_text_size_ && font_.wordWrapHeight(Component.literal(s), width*NORM_LINE_HEIGHT/line_height_)<=(height*NORM_LINE_HEIGHT/line_height_)
       );
     }
 
@@ -182,10 +183,12 @@ public class GuiTextEditing
     }
 
     @Override
-    public boolean mouseClicked(double x, double y, int button)
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
+      double x = event.x();
+      double y = event.y();
       if((!active) || (!visible) || (x<getX()) || (y<getY()) || (x>getX()+this.width) || (y>getY()+this.height)) return false;
-      if(button != 0) return true;
+      if(event.button() != 0) return true;
       final Guis.Coord2d sc = screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false);
       final int index = getDisplayCache().getIndexAtPosition(font_, Guis.Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_));
       if(index >= 0) {
@@ -197,7 +200,7 @@ public class GuiTextEditing
             edit_.setSelectionRange(StringSplitter.getWordPosition(getText(), -1, index, false), StringSplitter.getWordPosition(getText(), 1, index, false));
           }
         } else {
-          edit_.setCursorPos(index, Screen.hasShiftDown());
+          edit_.setCursorPos(index, event.hasShiftDown());
         }
         clearDisplayCache();
       }
@@ -208,10 +211,12 @@ public class GuiTextEditing
     }
 
     @Override
-    public boolean mouseDragged(double x, double y, int button, double dx, double dy)
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy)
     {
-      if(super.mouseDragged(x, y, button, dx, dy) || (button != 0)) return true;
+      if(super.mouseDragged(event, dx, dy) || (event.button() != 0)) return true;
       if((!active) || (!visible)) return false;
+      double x = event.x();
+      double y = event.y();
       final Guis.Coord2d sc = screenCoordinates(Guis.Coord2d.of((int)x, (int)y), false);
       edit_.setCursorPos(getDisplayCache().getIndexAtPosition(font_, Guis.Coord2d.of(sc.x*NORM_LINE_HEIGHT/line_height_, sc.y*NORM_LINE_HEIGHT/line_height_)), true);
       clearDisplayCache();
@@ -219,26 +224,26 @@ public class GuiTextEditing
     }
 
     @Override
-    public boolean charTyped(char key, int code)
+    public boolean charTyped(CharacterEvent event)
     {
-      if(super.charTyped(key, code)) return true;
+      if(super.charTyped(event)) return true;
       if((!active) || (!visible)) return false;
-      if(!StringUtil.isAllowedChatCharacter(key)) return false;
-      edit_.insertText(Character.toString(key));
+      if(!event.isAllowedChatCharacter()) return false;
+      edit_.insertText(event.codepointAsString());
       clearDisplayCache();
       on_changed_.accept(this);
       return true;
     }
 
     @Override
-    public boolean keyPressed(int key, int x, int y)
+    public boolean keyPressed(KeyEvent event)
     {
-      if(super.keyPressed(key, x, y)) return true;
+      if(super.keyPressed(event)) return true;
       if((!active) || (!visible)) return false;
       String text_before = text_;
-      if(!specialKeyMatched(key)) return isFocused();
+      if(!specialKeyMatched(event)) return isFocused();
       clearDisplayCache();
-      if((key == 257/*enter*/) && !edit_.isSelecting() && edit_.getCursorPos()<text_.length()-2) {
+      if((event.key() == 257/*enter*/) && !edit_.isSelecting() && edit_.getCursorPos()<text_.length()-2) {
         final int cp = edit_.getCursorPos();
         edit_.selectAll();
         edit_.insertText(eotTrimmed(text_));
@@ -253,14 +258,12 @@ public class GuiTextEditing
     protected void renderWidget(GuiGraphics gg, int mouseX, int mouseY, float partialTicks)
     {
       if(!this.visible) return;
-      RenderSystem.setShader(GameRenderer::getPositionTexShader);
-      RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
       int ox = (int)(this.getX() * (1.-font_scale_));
       int oy = (int)(this.getY() * (1.-font_scale_));
-      final PoseStack mxs = gg.pose();
-      mxs.pushPose();
-      mxs.translate(ox, oy, 0);
-      mxs.scale(font_scale_, font_scale_, font_scale_);
+      final Matrix3x2fStack mxs = gg.pose();
+      mxs.pushMatrix();
+      mxs.translate(ox, oy);
+      mxs.scale(font_scale_, font_scale_);
       final DisplayCache cache = getDisplayCache();
       for(LineInfo li:cache.lines) gg.drawString(font_, li.asComponent, li.x, li.y, font_color_);
       this.renderCursor(gg, cache.cursor, cache.cursorAtEnd);
@@ -269,7 +272,7 @@ public class GuiTextEditing
         Guis.Coord2d xy = getMousePosition();
         if((xy.x>=0) && (xy.y>=0) && (xy.x<width) && (xy.y<height)) on_mouse_move_.accept(this, getMousePosition());
       }
-      mxs.popPose();
+      mxs.popMatrix();
     }
 
     //---------------------------------------------------------------------------------
@@ -289,30 +292,31 @@ public class GuiTextEditing
     private String getClipboard()
     { return (Minecraft.getInstance()!=null) ? eotTrimmed(TextFieldHelper.getClipboardContents(Minecraft.getInstance())) : (""); }
 
-    private boolean specialKeyMatched(int key)
+    private boolean specialKeyMatched(KeyEvent event)
     {
-      if(Screen.isSelectAll(key)) { edit_.selectAll(); return true; }
-      if(Screen.isCopy(key)) { edit_.copy(); return true; }
-      if(Screen.isPaste(key)) { edit_.paste(); return true; }
-      if(Screen.isCut(key)) { edit_.cut(); return true; }
+      if(event.isSelectAll()) { edit_.selectAll(); return true; }
+      if(event.isCopy()) { edit_.copy(); return true; }
+      if(event.isPaste()) { edit_.paste(); return true; }
+      if(event.isCut()) { edit_.cut(); return true; }
+      final int key = event.key();
       switch(key) {
         case 257, 335 -> { edit_.insertText("\n"); return true; }
         case 259 -> { edit_.removeCharsFromCursor(-1); return true; }
         case 261 -> { edit_.removeCharsFromCursor(1); return true; }
-        case 262 -> { edit_.moveByChars(1, Screen.hasShiftDown()); return true; }
-        case 263 -> { edit_.moveByChars(-1, Screen.hasShiftDown()); return true; }
-        case 264 -> { changeLine(1); return true; } // arrow down
-        case 265 -> { changeLine(-1); return true; } // arrow up
-        case 266 -> { edit_.setCursorPos(0, Screen.hasShiftDown());  return true; } // page up
-        case 267 -> { edit_.setCursorPos(text_.length(), Screen.hasShiftDown()); return true; } // page down
-        case 268 -> { edit_.setCursorPos(getDisplayCache().findLineStart(edit_.getCursorPos()), Screen.hasShiftDown()); return true; } // home hey
-        case 269 -> { edit_.setCursorPos(getDisplayCache().findLineEnd(edit_.getCursorPos()), Screen.hasShiftDown()); return true; } // end key
+        case 262 -> { edit_.moveByChars(1, event.hasShiftDown()); return true; }
+        case 263 -> { edit_.moveByChars(-1, event.hasShiftDown()); return true; }
+        case 264 -> { changeLine(1, event.hasShiftDown()); return true; } // arrow down
+        case 265 -> { changeLine(-1, event.hasShiftDown()); return true; } // arrow up
+        case 266 -> { edit_.setCursorPos(0, event.hasShiftDown());  return true; } // page up
+        case 267 -> { edit_.setCursorPos(text_.length(), event.hasShiftDown()); return true; } // page down
+        case 268 -> { edit_.setCursorPos(getDisplayCache().findLineStart(edit_.getCursorPos()), event.hasShiftDown()); return true; } // home hey
+        case 269 -> { edit_.setCursorPos(getDisplayCache().findLineEnd(edit_.getCursorPos()), event.hasShiftDown()); return true; } // end key
         default ->  { return false; }
       }
     }
 
-    private void changeLine(int incr)
-    { edit_.setCursorPos(getDisplayCache().changeLine(edit_.getCursorPos(), incr), Screen.hasShiftDown()); }
+    private void changeLine(int incr, boolean selecting)
+    { edit_.setCursorPos(getDisplayCache().changeLine(edit_.getCursorPos(), incr), selecting); }
 
     private void renderCursor(GuiGraphics gg, Guis.Coord2d pos, boolean at_end)
     {

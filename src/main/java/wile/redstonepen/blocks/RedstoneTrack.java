@@ -25,7 +25,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -477,21 +477,21 @@ public class RedstoneTrack
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
       if(stack.is(Items.DEBUG_STICK)) {
-        if(world.isClientSide) return ItemInteractionResult.SUCCESS;
+        if(world.isClientSide()) return InteractionResult.SUCCESS;
         if(world.getBlockEntity(pos) instanceof TrackBlockEntity te) te.toggle_trace(player);
-        return ItemInteractionResult.CONSUME;
+        return InteractionResult.CONSUME;
       } else {
         // Place segment using Quill/Pen or Redstone dust.
         return switch(modifySegments(state, world, pos, player, stack, hand, rtr, false, RedstonePenItem.isPen(stack))) {
-          case SUCCESS -> ItemInteractionResult.SUCCESS;
-          case CONSUME -> ItemInteractionResult.CONSUME;
-          case PASS -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-          case FAIL -> ItemInteractionResult.FAIL;
-          case CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL;
-          case SUCCESS_NO_ITEM_USED -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+          case SUCCESS -> InteractionResult.SUCCESS;
+          case CONSUME -> InteractionResult.CONSUME;
+          case PASS -> InteractionResult.PASS;
+          case FAIL -> InteractionResult.FAIL;
+          case CONSUME_PARTIAL -> InteractionResult.CONSUME;
+          case SUCCESS_NO_ITEM_USED -> InteractionResult.PASS;
         };
       }
     }
@@ -556,7 +556,7 @@ public class RedstoneTrack
         if(behind_state.isRedstoneConductor(world, behind_pos)) {
           return behind_state.useWithoutItem(world, player, rtr);
         }
-        return InteractionResult.sidedSuccess(world.isClientSide());
+        return ((world.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER));
       }
       if(world.isClientSide()) return InteractionResult.SUCCESS;
       if(!RedstonePenItem.hasEnoughRedstone(stack, 1, player)) no_add = !no_remove;

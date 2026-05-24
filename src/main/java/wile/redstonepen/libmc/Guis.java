@@ -21,7 +21,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -42,7 +42,7 @@ public class Guis
   @Environment(EnvType.CLIENT)
   public static abstract class ContainerGui<T extends AbstractContainerMenu> extends AbstractContainerScreen<T>
   {
-    protected final ResourceLocation background_image_;
+    protected final Identifier background_image_;
     protected final Player player_;
     protected final Guis.BackgroundImage gui_background_;
     protected final TooltipDisplay tooltip_ = new TooltipDisplay();
@@ -50,7 +50,7 @@ public class Guis
     public ContainerGui(T menu, Inventory player_inv, Component title, String background_image, int width, int height)
     {
       super(menu, player_inv, title);
-      this.background_image_ = ResourceLocation.fromNamespaceAndPath(Auxiliaries.modid(), background_image);
+      this.background_image_ = Identifier.fromNamespaceAndPath(Auxiliaries.modid(), background_image);
       this.player_ = player_inv.player;
       this.imageWidth = width;
       this.imageHeight = height;
@@ -60,7 +60,7 @@ public class Guis
     public ContainerGui(T menu, Inventory player_inv, Component title, String background_image)
     {
       super(menu, player_inv, title);
-      this.background_image_ = ResourceLocation.fromNamespaceAndPath(Auxiliaries.modid(), background_image);
+      this.background_image_ = Identifier.fromNamespaceAndPath(Auxiliaries.modid(), background_image);
       this.player_ = player_inv.player;
       gui_background_ = new Guis.BackgroundImage(background_image_, imageWidth, imageHeight, Coord2d.ORIGIN);
     }
@@ -97,7 +97,7 @@ public class Guis
       RenderSystem.disableBlend();
     }
 
-    public final ResourceLocation getBackgroundImage()
+    public final Identifier getBackgroundImage()
     { return background_image_; }
 
     public final int getGuiLeft()
@@ -227,11 +227,11 @@ public class Guis
   {
     private final Coord2d texture_position_base_;
     private final Coord2d texture_position_filled_;
-    private final ResourceLocation atlas_;
+    private final Identifier atlas_;
     private double progress_max_ = 100;
     private double progress_ = 0;
 
-    public HorizontalProgressBar(ResourceLocation atlas, int width, int height, Coord2d base_texture_xy, Coord2d filled_texture_xy)
+    public HorizontalProgressBar(Identifier atlas, int width, int height, Coord2d base_texture_xy, Coord2d filled_texture_xy)
     {
       super(0, 0, width, height, EMPTY_TEXT);
       atlas_ = atlas;
@@ -281,11 +281,11 @@ public class Guis
   @Environment(EnvType.CLIENT)
   public static class BackgroundImage extends UiWidget
   {
-    private final ResourceLocation atlas_;
+    private final Identifier atlas_;
     private final Coord2d atlas_position_;
     public boolean visible;
 
-    public BackgroundImage(ResourceLocation atlas, int width, int height, Coord2d atlas_position)
+    public BackgroundImage(Identifier atlas, int width, int height, Coord2d atlas_position)
     {
       super(0, 0, width, height, EMPTY_TEXT);
       atlas_ = atlas;
@@ -308,11 +308,11 @@ public class Guis
   {
     private final Coord2d texture_position_off_;
     private final Coord2d texture_position_on_;
-    private final ResourceLocation atlas_;
+    private final Identifier atlas_;
     private boolean checked_ = false;
     private Consumer<CheckBox> on_click_ = (checkbox)->{};
 
-    public CheckBox(ResourceLocation atlas, int width, int height, Coord2d atlas_texture_position_off, Coord2d atlas_texture_position_on)
+    public CheckBox(Identifier atlas, int width, int height, Coord2d atlas_texture_position_off, Coord2d atlas_texture_position_on)
     {
       super(0, 0, width, height, EMPTY_TEXT);
       texture_position_off_ = atlas_texture_position_off;
@@ -352,11 +352,11 @@ public class Guis
   public static class ImageButton extends UiWidget
   {
     private final Coord2d texture_position_;
-    private final ResourceLocation atlas_;
+    private final Identifier atlas_;
     private Consumer<ImageButton> on_click_ = (bt)->{};
 
 
-    public ImageButton(ResourceLocation atlas, int width, int height, Coord2d atlas_texture_position)
+    public ImageButton(Identifier atlas, int width, int height, Coord2d atlas_texture_position)
     {
       super(0, 0, width, height, Component.empty());
       texture_position_ = atlas_texture_position;
@@ -389,9 +389,9 @@ public class Guis
   public static class Image extends UiWidget
   {
     private final Coord2d texture_position_;
-    private final ResourceLocation atlas_;
+    private final Identifier atlas_;
 
-    public Image(ResourceLocation atlas, int width, int height, Coord2d atlas_texture_position)
+    public Image(Identifier atlas, int width, int height, Coord2d atlas_texture_position)
     {
       super(0, 0, width, height, Component.empty());
       texture_position_ = atlas_texture_position;

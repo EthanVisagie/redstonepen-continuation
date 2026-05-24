@@ -18,7 +18,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -89,17 +88,17 @@ public class RemoteItem extends StandardItems.BaseItem
   { return 10000f; }
 
   @Override
-  public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand)
+  public InteractionResult use(Level world, Player player, InteractionHand hand)
   {
-    if(world.isClientSide) return InteractionResultHolder.success(player.getItemInHand(hand));
+    if(world.isClientSide()) return InteractionResult.SUCCESS;
     onTriggerRemoteLink((ServerLevel)world, (ServerPlayer)player, player.getItemInHand(hand));
-    return InteractionResultHolder.fail(player.getItemInHand(hand));
+    return InteractionResult.FAIL;
   }
 
   @Override
   public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context)
   {
-    if(context.getLevel().isClientSide) return InteractionResult.SUCCESS;
+    if(context.getLevel().isClientSide()) return InteractionResult.SUCCESS;
     onTriggerRemoteLink((ServerLevel)context.getLevel(), (ServerPlayer)context.getPlayer(), stack);
     return InteractionResult.CONSUME;
   }

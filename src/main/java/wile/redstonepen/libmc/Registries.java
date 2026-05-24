@@ -10,7 +10,7 @@ package wile.redstonepen.libmc;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.EntityType;
@@ -58,32 +58,32 @@ public class Registries
     registered_blocks.clear();
     block_suppliers.forEach((reg)->{
       registered_blocks.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_blocks.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK, Identifier.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_blocks.get(reg.getA()));
     });
     registered_items.clear();
     item_suppliers.forEach((reg)->{
       registered_items.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.ITEM, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_items.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ITEM, Identifier.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_items.get(reg.getA()));
     });
     registered_block_entity_types.clear();
     block_entity_type_suppliers.forEach((reg)->{
       registered_block_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_block_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_block_entity_types.get(reg.getA()));
     });
     registered_entity_types.clear();
     entity_type_suppliers.forEach((reg)->{
       registered_entity_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_entity_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_entity_types.get(reg.getA()));
     });
     registered_menu_types.clear();
     menu_type_suppliers.forEach((reg)->{
       registered_menu_types.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.MENU, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_menu_types.get(reg.getA()));
+      Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_menu_types.get(reg.getA()));
     });
     registered_recipe_serializers.clear();
     recipe_serializers_suppliers.forEach((reg)->{
       registered_recipe_serializers.put(reg.getA(), reg.getB().get());
-      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_recipe_serializers.get(reg.getA()));
+      Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, Identifier.fromNamespaceAndPath(ModConstants.MODID, reg.getA()), registered_recipe_serializers.get(reg.getA()));
     });
   }
 

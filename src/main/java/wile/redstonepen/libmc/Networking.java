@@ -16,7 +16,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -75,7 +75,7 @@ public class Networking
   public record UnifiedPayload(UnifiedData data) implements CustomPacketPayload
   {
     private static final StreamCodec<FriendlyByteBuf,UnifiedPayload> STREAM_CODEC = CustomPacketPayload.codec(UnifiedPayload::write, UnifiedPayload::new);
-    private static final CustomPacketPayload.Type<UnifiedPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, "unpnbt"));
+    private static final CustomPacketPayload.Type<UnifiedPayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ModConstants.MODID, "unpnbt"));
 
     public static CustomPacketPayload.Type<UnifiedPayload> getTYPE() { return TYPE; }
     private UnifiedPayload(FriendlyByteBuf buf) { this(new UnifiedData(buf.readUtf(), buf.readNbt())); }

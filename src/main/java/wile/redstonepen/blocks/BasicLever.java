@@ -55,7 +55,7 @@ public class BasicLever
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult brh)
     {
-      if(world.isClientSide) {
+      if(world.isClientSide()) {
         final BlockState new_state = state.cycle(POWERED);
         if(new_state.getValue(POWERED)) makeParticle(new_state, world, pos, 1.0f);
         return InteractionResult.SUCCESS;
@@ -74,8 +74,8 @@ public class BasicLever
     {
       for(int i=0; i<2; ++i) {
         final Vec3 vpos = Vec3.atCenterOf(pos)
-          .add(Vec3.atBottomCenterOf(state.getValue(FACING).getOpposite().getNormal()).scale(0.1))
-          .add(Vec3.atLowerCornerOf(net.minecraft.world.level.block.LeverBlock.getConnectedDirection(state).getOpposite().getNormal()).scale(0.2));
+          .add(Vec3.atBottomCenterOf(state.getValue(FACING).getOpposite().getUnitVec3i()).scale(0.1))
+          .add(Vec3.atLowerCornerOf(net.minecraft.world.level.block.LeverBlock.getConnectedDirection(state).getOpposite().getUnitVec3i()).scale(0.2));
         world.addParticle(new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, f), vpos.x(), vpos.y(), vpos.z(), 0.0, 0.0, 0.0);
       }
     }

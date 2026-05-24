@@ -103,7 +103,7 @@ public class ControlBox
     @Override
     public void setPlacedBy(Level world, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack)
     {
-      if(world.isClientSide) return;
+      if(world.isClientSide()) return;
       final CompoundTag nbt = Auxiliaries.getItemStackNbt(stack, "tedata");
       if(nbt.isEmpty()) return;
       final BlockEntity te = world.getBlockEntity(pos);
@@ -132,21 +132,21 @@ public class ControlBox
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rtr)
     {
       if(stack.is(Items.DEBUG_STICK)) {
-        if(world.isClientSide) return ItemInteractionResult.SUCCESS;
+        if(world.isClientSide()) return InteractionResult.SUCCESS;
         if(world.getBlockEntity(pos) instanceof ControlBoxBlockEntity te) te.toggle_trace(player);
-        return ItemInteractionResult.CONSUME;
+        return InteractionResult.CONSUME;
       } else {
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return InteractionResult.PASS;
       }
     }
 
     @Override
     public BlockState update(BlockState state, Level world, BlockPos pos, @Nullable BlockPos fromPos)
     {
-      if(world.isClientSide) return state;
+      if(world.isClientSide()) return state;
       if(!(world.getBlockEntity(pos) instanceof final ControlBoxBlockEntity cb)) return state;
       if(fromPos==null) { cb.tick_timer_=0; return state; }
       final BlockPos dp = fromPos.subtract(pos);
@@ -427,7 +427,7 @@ public class ControlBox
     public void sendAllDataToRemote()
     {
       super.sendAllDataToRemote();
-      if((world().isClientSide) || (te()==null)) return;
+      if((world().isClientSide()) || (te()==null)) return;
       Networking.PacketContainerSyncServerToClient.sendToListeners(world(), this, composeServerData(te(), true));
     }
 

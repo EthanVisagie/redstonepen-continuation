@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -35,7 +35,7 @@ public class ModRedstonePen implements ModInitializer
     ModContent.init();
     ModContent.initReferences();
     wile.redstonepen.detail.RcaSync.CommonRca.init();
-    Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, "creative_tab"), CREATIVE_TAB);
+    Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath(ModConstants.MODID, "creative_tab"), CREATIVE_TAB);
   }
 
   private static final CreativeModeTab CREATIVE_TAB = FabricItemGroup.builder()

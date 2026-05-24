@@ -54,7 +54,7 @@ public class StandardEntityBlocks
     @Override
     @Nullable
     default <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> te_type)
-    { return (world.isClientSide || (!isBlockEntityTicking(world, state))) ? (null) : ((Level w, BlockPos p, BlockState s, T te) -> ((StandardBlockEntity)te).tick()); }
+    { return (world.isClientSide() || (!isBlockEntityTicking(world, state))) ? (null) : ((Level w, BlockPos p, BlockState s, T te) -> ((StandardBlockEntity)te).tick()); }
 
     @Override
     @Nullable

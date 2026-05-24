@@ -69,7 +69,7 @@ public class BasicGauge
     @Override
     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving)
     {
-      if(world.isClientSide) return;
+      if(world.isClientSide()) return;
       final int p = world.getBestNeighborSignal(pos);
       if(p == state.getValue(POWER)) return;
       world.setBlock(pos, state.setValue(POWER, p), 2);

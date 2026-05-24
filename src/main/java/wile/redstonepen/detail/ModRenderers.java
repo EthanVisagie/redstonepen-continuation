@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -29,26 +29,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-// Note Fabric since 1.21: ModelResourceLocation now only ResourceLocation,
-//    getModelManager().getModel( RESOURCELOCATION ) added by the Fabric team to make it compatible.
+// Note Fabric since 1.21: ModelResourceLocation now only Identifier,
+//    getModelManager().getModel( Identifier ) added by the Fabric team to make it compatible.
 public class ModRenderers
 {
   @Environment(EnvType.CLIENT)
   public static class TrackTer implements BlockEntityRenderer<RedstoneTrack.TrackBlockEntity>
   {
-    private static final ResourceLocation[] model_rls  = new ResourceLocation[RedstoneTrack.defs.STATE_FLAG_WIR_COUNT];
-    private static final ResourceLocation[] modelm_rls = new ResourceLocation[RedstoneTrack.defs.STATE_FLAG_CON_COUNT];
-    private static final ResourceLocation[] modelc_rls = new ResourceLocation[RedstoneTrack.defs.STATE_FLAG_CON_COUNT];
+    private static final Identifier[] model_rls  = new Identifier[RedstoneTrack.defs.STATE_FLAG_WIR_COUNT];
+    private static final Identifier[] modelm_rls = new Identifier[RedstoneTrack.defs.STATE_FLAG_CON_COUNT];
+    private static final Identifier[] modelc_rls = new Identifier[RedstoneTrack.defs.STATE_FLAG_CON_COUNT];
     private static final ArrayList<Vec3> power_rgb = new ArrayList<>();
     private static int tesr_error_counter = 4;
     private final BlockEntityRendererProvider.Context renderer_;
 
-    public static List<ResourceLocation> registerModels()
+    public static List<Identifier> registerModels()
     {
-      List<ResourceLocation> resources_to_register = new ArrayList<>();
+      List<Identifier> resources_to_register = new ArrayList<>();
 
       RedstoneTrack.defs.models.STATE_WIRE_MAPPING.entrySet().forEach((kv->{
-        final ResourceLocation mrl = getModelResourceLocation(kv.getValue());
+        final Identifier mrl = getModelResourceLocation(kv.getValue());
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_WIR_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_WIR_POS+i))) != 0) {
             model_rls[i] = mrl;
@@ -58,7 +58,7 @@ public class ModRenderers
         resources_to_register.add(mrl); //  net.minecraftforge.client.model.ForgeModelBakery.addSpecialModel(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CONNECT_MAPPING.entrySet().forEach((kv->{
-        ResourceLocation mrl = getModelResourceLocation(kv.getValue());
+        Identifier mrl = getModelResourceLocation(kv.getValue());
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_CON_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_CON_POS+i))) != 0) {
             modelc_rls[i] = mrl;
@@ -68,7 +68,7 @@ public class ModRenderers
         resources_to_register.add(mrl);
       }));
       RedstoneTrack.defs.models.STATE_CNTWIRE_MAPPING.entrySet().forEach((kv->{
-        ResourceLocation mrl = getModelResourceLocation(kv.getValue());
+        Identifier mrl = getModelResourceLocation(kv.getValue());
         for(int i=0; i<RedstoneTrack.defs.STATE_FLAG_CON_COUNT; ++i) {
           if((kv.getKey() & (1L<<(RedstoneTrack.defs.STATE_FLAG_CON_POS+i))) != 0) {
             modelm_rls[i] = mrl;
@@ -89,12 +89,12 @@ public class ModRenderers
       return resources_to_register;
     }
 
-    private static ResourceLocation getModelResourceLocation(String name)
+    private static Identifier getModelResourceLocation(String name)
     {
-      // Fabric non uses ResourceLocation instead of ModelResourceLocation.
-      // Normally, the ModelResourceLocation was e.g.: `ModelResourceLocation mrl = new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, kv.getValue()), "inventory");`
+      // Fabric non uses Identifier instead of ModelResourceLocation.
+      // Normally, the ModelResourceLocation was e.g.: `ModelResourceLocation mrl = new ModelResourceLocation(Identifier.fromNamespaceAndPath(ModConstants.MODID, kv.getValue()), "inventory");`
       // No file path change desired, so the resource locations point to the item model directory.
-      return ResourceLocation.fromNamespaceAndPath(ModConstants.MODID, name).withPrefix("item/");
+      return Identifier.fromNamespaceAndPath(ModConstants.MODID, name).withPrefix("item/");
     }
 
     private static Vec3 getPowerRGB(int p)

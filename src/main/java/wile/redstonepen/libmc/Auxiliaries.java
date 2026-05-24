@@ -26,7 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringUtil;
@@ -249,10 +249,10 @@ public class Auxiliaries
   // Tag Handling
   // -------------------------------------------------------------------------------------------------------------------
 
-  public static ResourceLocation getResourceLocation(Item item)
+  public static Identifier getResourceLocation(Item item)
   { return BuiltInRegistries.ITEM.getKey(item); }
 
-  public static ResourceLocation getResourceLocation(Block block)
+  public static Identifier getResourceLocation(Block block)
   { return BuiltInRegistries.BLOCK.getKey(block); }
 
   // -------------------------------------------------------------------------------------------------------------------

@@ -55,8 +55,6 @@ public class StandardItems
   {
     public BaseBlockItem(Block block, Item.Properties properties)
     { super(block, properties); }
-
-    @Override
     @Environment(EnvType.CLIENT)
     public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
     { Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true); }

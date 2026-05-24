@@ -49,9 +49,7 @@ public class RemoteItem extends StandardItems.BaseItem
   { super(properties); }
 
   //------------------------------------------------------------------------------------------------------------------
-
-  @Override
-  @Environment(EnvType.CLIENT)
+    @Environment(EnvType.CLIENT)
   public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
   {
     final var data = getRemoteData(stack).orElse(null);

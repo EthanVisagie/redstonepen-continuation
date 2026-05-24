@@ -15,6 +15,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -24,6 +26,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -34,7 +37,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
@@ -114,7 +116,6 @@ public class StandardBlocks
     public long config()
     { return config; }
 
-    @Override
     @Environment(EnvType.CLIENT)
     public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
     { Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true); }
@@ -128,10 +129,10 @@ public class StandardBlocks
     { return ((config & CFG_AI_PASSABLE)!=0) && (super.isPathfindable(state, type)); }
 
     @Override
-    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving)
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel world, BlockPos pos, boolean isMoving)
     {
-      final boolean rsup = (state.hasBlockEntity() && (state.getBlock() != newState.getBlock()));
-      super.onRemove(state, world, pos, newState, isMoving);
+      final boolean rsup = state.hasBlockEntity();
+      super.affectNeighborsAfterRemoval(state, world, pos, isMoving);
       if(rsup) world.updateNeighbourForOutputSignal(pos, this);
     }
 
@@ -147,31 +148,31 @@ public class StandardBlocks
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos)
-    { return (((config & CFG_WATERLOGGABLE)==0) || (!state.getValue(WATERLOGGED))) && super.propagatesSkylightDown(state, reader, pos); }
+    protected boolean propagatesSkylightDown(BlockState state)
+    { return (((config & CFG_WATERLOGGABLE)==0) || (!state.getValue(WATERLOGGED))) && super.propagatesSkylightDown(state); }
 
     @Override
-    public FluidState getFluidState(BlockState state)
+    protected FluidState getFluidState(BlockState state)
     { return (((config & CFG_WATERLOGGABLE)!=0) && state.getValue(WATERLOGGED)) ? Fluids.WATER.getSource(false) : super.getFluidState(state); }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor world, BlockPos pos, BlockPos facingPos)
+    protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickAccess, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource random)
     {
-      if(((config & CFG_WATERLOGGABLE)!=0) && (state.getValue(WATERLOGGED))) world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
-      return state;
+      if(((config & CFG_WATERLOGGABLE)!=0) && (state.getValue(WATERLOGGED))) tickAccess.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
+      return super.updateShape(state, world, tickAccess, pos, facing, facingPos, facingState, random);
     }
 
     @Override // SimpleWaterloggedBlock
-    public boolean canPlaceLiquid(@Nullable Player player, BlockGetter world, BlockPos pos, BlockState state, Fluid fluid)
-    { return ((config & CFG_WATERLOGGABLE)!=0) && SimpleWaterloggedBlock.super.canPlaceLiquid(player, world, pos, state, fluid); }
+    public boolean canPlaceLiquid(@Nullable LivingEntity entity, BlockGetter world, BlockPos pos, BlockState state, Fluid fluid)
+    { return ((config & CFG_WATERLOGGABLE)!=0) && SimpleWaterloggedBlock.super.canPlaceLiquid(entity, world, pos, state, fluid); }
 
     @Override // SimpleWaterloggedBlock
     public boolean placeLiquid(LevelAccessor world, BlockPos pos, BlockState state, FluidState fluidState)
     { return ((config & CFG_WATERLOGGABLE)!=0) && SimpleWaterloggedBlock.super.placeLiquid(world, pos, state, fluidState); }
 
     @Override // SimpleWaterloggedBlock
-    public ItemStack pickupBlock(@Nullable Player player, LevelAccessor world, BlockPos pos, BlockState state)
-    { return ((config & CFG_WATERLOGGABLE)!=0) ? (SimpleWaterloggedBlock.super.pickupBlock(player, world, pos, state)) : (ItemStack.EMPTY); }
+    public ItemStack pickupBlock(@Nullable LivingEntity entity, LevelAccessor world, BlockPos pos, BlockState state)
+    { return ((config & CFG_WATERLOGGABLE)!=0) ? (SimpleWaterloggedBlock.super.pickupBlock(entity, world, pos, state)) : (ItemStack.EMPTY); }
 
     @Override // SimpleWaterloggedBlock
     public Optional<SoundEvent> getPickupSound()

@@ -83,8 +83,6 @@ public class ControlBox
     @Override
     public boolean isBlockEntityTicking(Level world, BlockState state)
     { return true; }
-
-    @Override
     @Environment(EnvType.CLIENT)
     public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
     {

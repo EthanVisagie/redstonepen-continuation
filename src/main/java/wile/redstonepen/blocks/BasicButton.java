@@ -46,8 +46,6 @@ public class BasicButton
 
     public BasicButtonBlock(Config conf, BlockBehaviour.Properties properties)
     { super(BlockSetType.SPRUCE, conf.active_time(), properties); config = conf; }
-
-    @Override
     @Environment(EnvType.CLIENT)
     public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag)
     { Auxiliaries.Tooltip.addInformation(stack, ctx, tooltip, flag, true); }

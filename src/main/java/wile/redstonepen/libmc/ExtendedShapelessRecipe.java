@@ -287,11 +287,10 @@ public class ExtendedShapelessRecipe implements CraftingRecipe
                 .forGetter(r->r.result),
         Ingredient.CODEC
                 .listOf().fieldOf("ingredients").flatXmap(list -> {
-                    final Ingredient[] ingredients = list.stream().filter(ing->!ing.isEmpty()).toArray(Ingredient[]::new);
-                    if(ingredients.length == 0) { return DataResult.error(() -> "no ingredients"); }
-                    if(ingredients.length > 9) { return DataResult.error(() -> "too many ingredients"); }
+                    if(list.isEmpty()) { return DataResult.error(() -> "no ingredients"); }
+                    if(list.size() > 9) { return DataResult.error(() -> "too many ingredients"); }
                     final NonNullList<Ingredient> nnl = NonNullList.create();
-                    Collections.addAll(nnl, ingredients);
+                    nnl.addAll(list);
                     return DataResult.success(nnl);
                   }, DataResult::success)
                 .forGetter(r->r.ingredients),

@@ -1,18 +1,18 @@
-{
-  "type": "redstonepen:crafting_extended_shapeless",
-  "ingredients": [
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:redstone" },
-    { "item": "minecraft:feather" }
-  ],
-  "result": {
-    "id": "redstonepen:quill",
-    "count": 1
-  }
+﻿{
+    "type":  "redstonepen:crafting_extended_shapeless",
+    "ingredients":  [
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:redstone",
+                        "minecraft:feather"
+                    ],
+    "result":  {
+                   "id":  "redstonepen:quill",
+                   "count":  1
+               }
 }

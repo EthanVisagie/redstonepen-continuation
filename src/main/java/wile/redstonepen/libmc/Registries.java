@@ -49,6 +49,9 @@ public class Registries
   private static final Map<String, MenuType<?>> registered_menu_types = new HashMap<>();
   private static final Map<String, RecipeSerializer<?>> registered_recipe_serializers = new HashMap<>();
 
+  private static net.minecraft.resources.ResourceKey<Item> itemKey(String name)
+  { return net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, Identifier.fromNamespaceAndPath(ModConstants.MODID, name)); }
+
 
   public static void init()
   {
@@ -148,7 +151,7 @@ public class Registries
   public static <T extends Block> void addBlock(String registry_name, Supplier<T> block_supplier)
   {
     block_suppliers.add(new Tuple<>(registry_name, block_supplier));
-    item_suppliers.add(new Tuple<>(registry_name, ()->new BlockItem(registered_blocks.get(registry_name), new Item.Properties())));
+    item_suppliers.add(new Tuple<>(registry_name, ()->new BlockItem(registered_blocks.get(registry_name), new Item.Properties().setId(itemKey(registry_name)))));
   }
 
   public static <TB extends Block, TI extends Item> void addBlock(String registry_name, Supplier<TB> block_supplier, Supplier<TI> item_supplier)
@@ -181,7 +184,7 @@ public class Registries
   // -------------------------------------------------------------------------------------------------------------
 
   public static <TB extends Block, TI extends Item> void addBlock(String registry_name, Supplier<TB> block_supplier, BiFunction<Block, Item.Properties, Item> item_builder)
-  { addBlock(registry_name, block_supplier, ()->item_builder.apply(registered_blocks.get(registry_name), new Item.Properties())); }
+  { addBlock(registry_name, block_supplier, ()->item_builder.apply(registered_blocks.get(registry_name), new Item.Properties().setId(itemKey(registry_name)))); }
 
   public static void addBlock(String registry_name, Supplier<? extends Block> block_supplier, FabricBlockEntityTypeBuilder.Factory<?> block_entity_ctor)
   {
